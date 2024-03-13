@@ -1,0 +1,9 @@
+ipdb
+matplotlib
+seaborn
+pandas
+tqdm
+jupyter
+equinox
+optax
+einops
