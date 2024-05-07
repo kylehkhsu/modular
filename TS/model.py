@@ -4,8 +4,8 @@ import numpy as np
 import einops
 import utils
 import equinox as eqx
-
-from typing import Optional
+from dataclasses import dataclass
+from typing import Optional, Literal, List, Callable
 
 LAMBDAS = {
     'target': 100,
@@ -41,7 +41,7 @@ class CollocationModel(eqx.Module):
                                         minval=0,
                                         maxval=1)
 
-    def loss(self, model, y, *, key=None):
+    def loss(self, model, y, key=None):
         # compute best-fit transition matrix for x(t+1) = W x(t) + b
         x = model.x
         x_1 = jnp.concatenate([x, jnp.ones((self.T, 1))], axis=1)
@@ -78,6 +78,8 @@ class ShootingModel(eqx.Module):
     key: jnp.ndarray
     lambdas: dict
 
+    non_linearity: bool = eqx.field(static=True)
+
     x0: Optional[jnp.ndarray] = None
     W: Optional[jnp.ndarray] = None
     bw: Optional[jnp.ndarray] = None
@@ -103,10 +105,12 @@ class ShootingModel(eqx.Module):
         if self.br is None:
             self.br = self.sigma * jax.random.normal(self.key, (self.K, ))
 
-    def forward(self, x0):
+    def __call__(self, x0):
 
         def f(x, dummy):
             x_next = einops.einsum(x, self.W, 'I, I W  -> W') + self.bw
+            if self.non_linearity:
+                x_next = jax.nn.relu(x_next)
             return x_next, x_next
 
         dummy_x = jnp.empty((self.T - 1, self.K, 0))
@@ -116,12 +120,14 @@ class ShootingModel(eqx.Module):
 
         return x, y
 
-    def loss(self, model, y_target, key=None):
+    def loss(self, model, x0, y_target, key=None):
 
-        x0, W, bw, R, br = model.x0, model.W, model.bw, model.R, model.br
+        W, bw, R, br = model.W, model.bw, model.R, model.br
 
         def f(x, dummy):
             x_next = einops.einsum(x, W, 'I, I W  -> W') + bw
+            if self.non_linearity:
+                x_next = jax.nn.relu(x_next)
             return x_next, x_next
 
         dummy_x = jnp.empty((self.T - 1, 0))
@@ -233,12 +239,37 @@ class ShootingMultitaskModel(ShootingModel):
         return loss, aux
 
 
-@eqx.filter_jit
-def train_step(model, optimizer_state, optimizer, y, key, **kwargs):
+## Moudlar teacher class for teacher-student setup
+@dataclass
+class ModularTeacher:
+    modules: List[eqx.Module]
 
-    (_, aux), grad = eqx.filter_value_and_grad(model.loss,
-                                               has_aux=True)(model, y, key,
-                                                             **kwargs)
-    update, optimizer_state = optimizer.update(grad, optimizer_state, model)
-    model = eqx.apply_updates(model, update)
-    return model, optimizer_state, aux
+    def __len__(self):
+        return len(self.modules)
+
+    def forward(self, x0s):
+
+        return {
+            i: self.single_module_forward(module, x0)
+            for i, (module, x0) in enumerate(zip(self.modules, x0s))
+        }
+
+    def single_module_forward(self, module, x0):
+
+        return module(x0)
+
+
+@dataclass
+class ModularTeacherStudent:
+    teacher: ModularTeacher
+    student: ShootingModel
+
+    def teacher_forward(self, x0):
+        assert len(x0) == len(self.teacher), "x0 dimension is not correct"
+        return self.teacher.forward(x0)
+
+    def student_forward(self, x0):
+        return self.student(x0)
+
+
+## Student class for teacher-student setup
