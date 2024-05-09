@@ -78,7 +78,9 @@ class ShootingModel(eqx.Module):
     key: jnp.ndarray
     lambdas: dict
 
-    non_linearity: bool = eqx.field(static=True)
+    non_linearity: Optional[str] = eqx.field(static=True)
+    output_non_linearity: Optional[str] = eqx.field(static=True)
+    orthogonal_init: bool = eqx.field(static=True)
 
     x0: Optional[jnp.ndarray] = None
     W: Optional[jnp.ndarray] = None
@@ -94,8 +96,15 @@ class ShootingModel(eqx.Module):
             self.x0 = self.sigma * jax.random.normal(self.key,
                                                      (self.K * self.D, ))
         if self.W is None:
-            self.W = self.sigma * jax.random.normal(
-                self.key, (self.K * self.D, self.K * self.D))
+            if self.orthogonal_init:
+                initializer = jax.nn.initializers.orthogonal(scale=self.sigma)
+                self.W = initializer(self.key,
+                                     (self.K * self.D, self.K * self.D),
+                                     jnp.float32)
+            else:
+                self.W = self.sigma * jax.random.normal(
+                    self.key, (self.K * self.D, self.K * self.D))
+
         if self.R is None:
             self.R = self.sigma * jax.random.normal(self.key,
                                                     (self.K * self.D, self.K))
@@ -109,25 +118,46 @@ class ShootingModel(eqx.Module):
 
         def f(x, dummy):
             x_next = einops.einsum(x, self.W, 'I, I W  -> W') + self.bw
-            if self.non_linearity:
+
+            if self.non_linearity == 'relu':
                 x_next = jax.nn.relu(x_next)
+            elif self.non_linearity == 'tanh':
+                x_next = jax.lax.tanh(x_next)
+            elif self.non_linearity == 'sigmoid':
+                x_next = jax.nn.sigmoid(x_next)
+            elif self.non_linearity is None:
+                pass
             return x_next, x_next
 
         dummy_x = jnp.empty((self.T - 1, self.K, 0))
         _, xs = jax.lax.scan(f, x0, dummy_x)
         x = jnp.concatenate([self.x0[None, :], xs], axis=0)
         y = einops.einsum(x, self.R, 'T I, I O -> T O') + self.br
+        if self.output_non_linearity == 'relu':
+            y = jax.nn.relu(y)
+        elif self.output_non_linearity == 'tanh':
+            y = jax.lax.tanh(y)
+        elif self.output_non_linearity == 'sigmoid':
+            y = jax.nn.sigmoid(y)
+        elif self.output_non_linearity is None:
+            pass
 
         return x, y
 
-    def loss(self, model, x0, y_target, key=None):
+    def loss(self, model, y_target, key=None):
 
-        W, bw, R, br = model.W, model.bw, model.R, model.br
+        x0, W, bw, R, br = model.x0, model.W, model.bw, model.R, model.br
 
         def f(x, dummy):
             x_next = einops.einsum(x, W, 'I, I W  -> W') + bw
-            if self.non_linearity:
+            if self.non_linearity == 'relu':
                 x_next = jax.nn.relu(x_next)
+            elif self.non_linearity == 'tanh':
+                x_next = jax.lax.tanh(x_next)
+            elif self.non_linearity == 'sigmoid':
+                x_next = jax.nn.sigmoid(x_next)
+            elif self.non_linearity is None:
+                x_next = x_next
             return x_next, x_next
 
         dummy_x = jnp.empty((self.T - 1, 0))
@@ -240,15 +270,15 @@ class ShootingMultitaskModel(ShootingModel):
 
 
 ## Moudlar teacher class for teacher-student setup
-@dataclass
-class ModularTeacher:
+
+
+class ModularTeacher(eqx.Module):
     modules: List[eqx.Module]
 
     def __len__(self):
         return len(self.modules)
 
     def forward(self, x0s):
-
         return {
             i: self.single_module_forward(module, x0)
             for i, (module, x0) in enumerate(zip(self.modules, x0s))
@@ -266,6 +296,7 @@ class ModularTeacherStudent:
 
     def teacher_forward(self, x0):
         assert len(x0) == len(self.teacher), "x0 dimension is not correct"
+
         return self.teacher.forward(x0)
 
     def student_forward(self, x0):

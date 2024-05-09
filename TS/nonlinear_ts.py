@@ -17,19 +17,39 @@ import tqdm
 import pprint
 import einops
 
-from model import ShootingModel, ModularTeacher, ModularTeacherStudent, SHOOTING_LAMBDAS
+from model import ShootingModel, ModularTeacher
 import utils
+
+SHOOTING_LAMBDAS = {
+    'target': 10000,
+    'transition': 1,
+    'activation_energy': 1,
+    'activation_positivity': 1,
+    'readout_energy': 1,
+    'transition_energy': 1
+}
 
 
 @eqx.filter_jit
-def train_step(model, optimizer_state, optimizer, x0, y, key, **kwargs):
+def train_step(teacher, student, optimizer_state, optimizer, key, **kwargs):
 
-    (_, aux), grad = eqx.filter_value_and_grad(model.loss,
-                                               has_aux=True)(model, x0, y, key,
+    x0 = student.sigma * jax.random.normal(key, (student.K, student.D))
+    ## compute forward pass from teacher; get {'x', 'y'}
+    teacher_pred = teacher.forward(x0)
+    teacher_pred = jnp.stack(
+        [teacher_pred[k][1].squeeze() for k in range(len(teacher))]).T
+    ## concat predicted output from teacher
+
+    student_x0 = jnp.reshape(x0, (student.K * student.D, ))
+
+    (_, aux), grad = eqx.filter_value_and_grad(student.loss,
+                                               has_aux=True)(student,
+                                                             student_x0,
+                                                             teacher_pred, key,
                                                              **kwargs)
-    update, optimizer_state = optimizer.update(grad, optimizer_state, model)
-    model = eqx.apply_updates(model, update)
-    return model, optimizer_state, aux
+    update, optimizer_state = optimizer.update(grad, optimizer_state, student)
+    student = eqx.apply_updates(student, update)
+    return student, optimizer_state, aux
 
 
 def experiment(**kwargs):
@@ -42,7 +62,7 @@ def experiment(**kwargs):
                       D=kwargs['D'],
                       T=kwargs['T'],
                       key=key,
-                      non_linearity=True,
+                      non_linearity=kwargs['non_linearity'],
                       lambdas=SHOOTING_LAMBDAS,
                       sigma=kwargs['sigma']) for _ in range(kwargs['K'])
     ])
@@ -52,12 +72,9 @@ def experiment(**kwargs):
                             D=kwargs['D'],
                             T=kwargs['T'],
                             key=key,
-                            non_linearity=True,
+                            non_linearity=kwargs['non_linearity'],
                             lambdas=SHOOTING_LAMBDAS,
                             sigma=kwargs['sigma'])
-
-    teacher_student_pair = ModularTeacherStudent(teacher=teacher,
-                                                 student=student)
 
     ## training loop: initialise x0, get y from teacher and train student with the x0, y pair
 
@@ -74,21 +91,10 @@ def experiment(**kwargs):
     for n in tqdm.trange(kwargs['max_iters']):
         key, subkey = jax.random.split(key)
         ## initialise random x0
-        x0 = kwargs['sigma'] * jax.random.normal(subkey,
-                                                 (kwargs['K'], kwargs['D']))
-        ## compute forward pass from teacher; get {'x', 'y'}
-        _, teacher_pred = teacher_student_pair.teacher_forward(x0)
-        ## concat predicted output from teacher
-
-        ## maybe make output as dictionary to avoid indexing but not important rn
-
-        student_x0 = jnp.reshape(x0, (kwargs['K'] * kwargs['D'], ))
-
-        student, optimizer_state, aux = train_step(student,
+        student, optimizer_state, aux = train_step(teacher,
+                                                   student,
                                                    optimizer_state,
                                                    optimizer,
-                                                   student_x0,
-                                                   teacher_pred,
                                                    key=subkey)
         if n % kwargs['log_frequency'] == 0:
             for k, v, in aux['losses'].items():
@@ -98,10 +104,15 @@ def experiment(**kwargs):
                     loss_history[k] = [v.item()]
         if n % kwargs['print_frequency'] == 0:
             pprint.pprint(aux['losses'])
+    teacher_out = teacher.forward(aux['x'][0, :].reshape(student.K, student.D))
+    teacher_activity = jnp.concat(
+        [teacher_out[k][0].squeeze() for k in range(len(teacher))], axis=-1)
 
-        json.dump(kwargs, open(os.path.join(exp_logdir, 'args.json'), 'w'))
-        joblib.dump(loss_history, os.path.join(exp_logdir, 'loss_history.jl'))
-        joblib.dump(aux, os.path.join(exp_logdir, 'final_model_aux.jl'))
+    json.dump(kwargs, open(os.path.join(exp_logdir, 'args.json'), 'w'))
+    joblib.dump(loss_history, os.path.join(exp_logdir, 'loss_history.jl'))
+    joblib.dump(aux, os.path.join(exp_logdir, 'final_student_aux.jl'))
+    joblib.dump({"x": teacher_activity},
+                os.path.join(exp_logdir, 'teacher_activity.jl'))
 
 
 if __name__ == '__main__':
@@ -116,13 +127,17 @@ if __name__ == '__main__':
     parser.add_argument("--T", type=int, default=100, help="Sequence length")
     parser.add_argument("--sigma",
                         type=float,
-                        default=0.01,
+                        default=1,
                         help="Scaling for model weight initalisation")
+    parser.add_argument("--non-linearity",
+                        type=str,
+                        default="tanh",
+                        help="nonlinearity type")
 
     ### Training params
     parser.add_argument("--max-iters",
                         type=int,
-                        default=20000,
+                        default=50000,
                         help="Update iters")
     parser.add_argument("--lr", type=float, default=1e-4, help="learning rate")
     parser.add_argument("--seed",
