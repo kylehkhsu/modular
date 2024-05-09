@@ -30,10 +30,10 @@ SHOOTING_LAMBDAS_TEACHER = {
 }
 
 SHOOTING_LAMBDAS_STUDENT = {
-    'target': 1e+7,
+    'target': 1000,
     'transition': 1,
     'activation_energy': 1,
-    'activation_positivity': 1,
+    'activation_positivity': 1000,
     'readout_energy': 1,
     'transition_energy': 1
 }
@@ -97,7 +97,7 @@ def experiment(**kwargs):
     key = jax.random.PRNGKey(kwargs['seed'])
     ## Generate oscillatory data and train teacher on this first
     y_true, _ = generate_data(kwargs['D'], kwargs['freqs'], 0.05, 10, key)
-    print(y_true.shape)
+
     ## initialise teacher and fit with the oscillatory output
     teacher = ModularTeacher([
         ShootingModel(K=1,
@@ -210,7 +210,7 @@ if __name__ == '__main__':
     parser.add_argument("--T", type=int, default=200, help="Sequence length")
     parser.add_argument("--sigma",
                         type=float,
-                        default=1,
+                        default=0.001,
                         help="Scaling for model weight initalisation")
     parser.add_argument("--non-linearity",
                         type=str,
@@ -221,7 +221,7 @@ if __name__ == '__main__':
     ### Training params
     parser.add_argument("--max-iters-teacher",
                         type=int,
-                        default=300000,
+                        default=1,
                         help="Update iters")
     parser.add_argument("--max-iters-student",
                         type=int,
@@ -229,11 +229,11 @@ if __name__ == '__main__':
                         help="Update iters")
     parser.add_argument("--lr-teacher",
                         type=float,
-                        default=5e-4,
+                        default=1e-3,
                         help="learning rate")
     parser.add_argument("--lr-student",
                         type=float,
-                        default=5e-4,
+                        default=1e-3,
                         help="learning rate")
     parser.add_argument("--seed",
                         type=int,
