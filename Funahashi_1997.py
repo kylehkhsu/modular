@@ -5,11 +5,9 @@
 # Pull in imports
 import numpy as np
 import jax.numpy as jnp
-from jax import vmap, value_and_grad, grad, jit, random
+from jax import value_and_grad, grad, jit, random
 import jax.nn as jnn
-import math
 import optax
-import scipy
 import datetime
 import os
 
