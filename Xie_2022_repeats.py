@@ -18,19 +18,19 @@ reward = 1 # Whether to predict reward or not
 num_stim = 6 # How many stimuli (3 in original task)
 seq_len = 2 # Seq length
 save_iter = 50000 # How often to save the weights
-T = 100000000 # Number of gradient descent steps
-learning_rate = 1e-5 # Learning Rate
-random_seed = np.random.choice(1000000) # Random seed
-N = 50 # Number of neurons
-mu_fit = 10000 # Fit hyperparameter
-mu_G = 10 # Activity hyperparameter
+T = 10000000000 # Number of gradient descent steps
+learning_rate = 5e-5 # Learning Rate
+random_seed = np.random.choice(10000) # Random seed
+N = 30 # Number of neurons
+mu_fit = 100000 # Fit hyperparameter
+mu_G = 100 # Activity hyperparameter
 mu_W = 0.1 # Weight hyperparameter
 mu_R = 0.1 # Readout hyperparameter
-mu_pos = 2000 # Positivity hyperparameter
+mu_pos = 10000 # Positivity hyperparameter
 fit_thresh = 0.01 # Fit threhsold
 debias_outputs = 1 # Whether to remove bias from outputs
 debias_inputs = 1 # Or inputs
-goal_encoding = 1 # What goal encoding to use, circle, one hot, or data generated.
+goal_encoding = 2 # What goal encoding to use, circle, one hot, or data generated.
 
 # Configure file saving
 date = datetime.datetime.now()
@@ -305,7 +305,6 @@ for t in range(T):
         min_this_step = 0
         print(f"Step {t}, Loss: {loss:.5f}, Fit: {L_f:.5f}, Act: {L_a:.5f}, Wei: {L_w:.5f}, R: {L_R:.5f}, Pos: {L_p:.5f}, I: {L_I:.5f}")
         
-        np.save(f"data/{today}/{now}_{random_seed}/params_{t}_{min_loss:.5f}", params_best)
         
     if loss < min_loss:
         params_best = params
@@ -313,3 +312,6 @@ for t in range(T):
         if min_this_step == 0:
             print(f'New min! {loss}')
             min_this_step = 1
+            np.save(f"data/{today}/{now}_{random_seed}/params_{t}_{min_loss:.5f}", params_best)
+            
+np.save(f"data/{today}/{now}_{random_seed}/params_{t}_{min_loss:.5f}", params_best)
