@@ -13,17 +13,17 @@ import os
 
 # Set up parameters
 repeats = 0 # Whether to include repeats or not
-reward = 1 # Whether to predict reward or not
+reward = 0 # Whether to predict reward or not
 num_stim = 3 # How many stimuli (3 in original task)
 save_iter = 50000 # How often to save the weights
 T = 10000000000 # Number of gradient descent steps
-learning_rate = 5e-5 # Learning Rate
+learning_rate = 1e-6 # Learning Rate
 random_seed = np.random.choice(10000) # Random seed
-N = 30 # Number of neurons
+N = 35 # Number of neurons
 mu_fit = 100000 # Fit hyperparameter
-mu_G = 100 # Activity hyperparameter
-mu_W = 0.1 # Weight hyperparameter
-mu_R = 0.1 # Readout hyperparameter
+mu_G = 250 # Activity hyperparameter
+mu_W = 0.025 # Weight hyperparameter
+mu_R = 0.025 # Readout hyperparameter
 mu_pos = 10000 # Positivity hyperparameter
 fit_thresh = 0.01 # Fit threhsold
 
