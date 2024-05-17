@@ -19,13 +19,13 @@ num_stim = 6 # How many stimuli (3 in original task)
 seq_len = 2 # Seq length
 save_iter = 50000 # How often to save the weights
 T = 10000000000 # Number of gradient descent steps
-learning_rate = 1e-6 # Learning Rate
+learning_rate = 5e-5 # Learning Rate
 random_seed = np.random.choice(10000) # Random seed
-N = 35 # Number of neurons
+N = 30 # Number of neurons
 mu_fit = 100000 # Fit hyperparameter
-mu_G = 500 # Activity hyperparameter
-mu_W = 0.005 # Weight hyperparameter
-mu_R = 0.005 # Readout hyperparameter
+mu_G = 100 # Activity hyperparameter
+mu_W = 0.1 # Weight hyperparameter
+mu_R = 0.1 # Readout hyperparameter
 mu_pos = 10000 # Positivity hyperparameter
 fit_thresh = 0.01 # Fit threhsold
 debias_outputs = 1 # Whether to remove bias from outputs
@@ -57,7 +57,7 @@ elif goal_encoding == 1:
     thetas = [2*np.pi/num_stim*i for i in range(num_stim)]
     generators = np.stack([np.cos(thetas), np.sin(thetas)]).T
 elif goal_encoding == 2:
-    generators = np.load('./best_fitting_symmetric_generators.npy')
+    generators = np.load('./data/best_fitting_symmetric_generators.npy')
     num_stim = generators.shape[0]
 data_dim = generators.shape[1]
 

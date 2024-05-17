@@ -57,7 +57,7 @@ elif goal_encoding == 1:
     thetas = [2*np.pi/num_stim*i for i in range(num_stim)]
     generators = np.stack([np.cos(thetas), np.sin(thetas)]).T
 elif goal_encoding == 2:
-    generators = np.load('./best_fitting_symmetric_generators.npy')
+    generators = np.load('./data/best_fitting_symmetric_generators.npy')
     num_stim = generators.shape[0]
 data_dim = generators.shape[1]
 
