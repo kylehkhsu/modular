@@ -19,6 +19,11 @@ def process_individually(xs, xs_type):
 
 
 def compute_nmi(sources, latents, sources_type, latents_type):
+    if latents_type == 'continuous':
+        sources = np.tile(sources, (5, 1))
+        latents = np.tile(latents, (5, 1))
+        latents_std = np.std(latents, axis=0)
+        latents = latents + np.random.normal(0, latents_std * 0.01, size=latents.shape)
 
     processed_sources = process_individually(sources, sources_type)
     processed_latents = process_individually(latents, latents_type)
@@ -30,7 +35,7 @@ def compute_nmi(sources, latents, sources_type, latents_type):
                 ret[i, j] = metrics.mutual_info_score(processed_sources[:, i], processed_latents[:, j])
             elif sources_type == 'discrete' and latents_type == 'continuous':
                 ret[i, j] = feature_selection.mutual_info_classif(
-                    processed_latents[:, j][:, None], processed_sources[:, i], discrete_features=False,n_neighbors=10
+                    processed_latents[:, j][:, None], processed_sources[:, i], discrete_features=False, n_neighbors=10
                 )
             elif sources_type == 'continuous' and latents_type == 'continuous':
                 ret[i, j] = feature_selection.mutual_info_regression(
@@ -46,6 +51,7 @@ def compute_nmi(sources, latents, sources_type, latents_type):
             )
         else:
             raise ValueError(f'Unknown sources type: {sources_type}')
+        print('entropy', entropy)
         ret[i, :] /= entropy
     return ret
 
@@ -84,7 +90,7 @@ def logistic_regression(X, y):
     assert X.shape[0] == y.shape[0]
     assert X.ndim == 2
     assert y.ndim == 1
-    assert X.dtype in [np.float32, np.float64]
+    assert X.dtype in [np.float32, np.float64, np.int32]
     assert y.dtype in [np.int32, np.int64]
 
     model = linear_model.LogisticRegression(
@@ -94,7 +100,7 @@ def logistic_regression(X, y):
         fit_intercept=True,
         class_weight='balanced',
         solver='lbfgs',
-        max_iter=100,
+        max_iter=10000,
         multi_class='multinomial',
         n_jobs=1,
         verbose=0,
