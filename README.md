@@ -1,6 +1,6 @@
 This repo contains code for the paper "Don’t Cut Corners: A theory of disentanglement in biologically inspired neurons for (almost) any dataset". 
 
-The following notebooks can be used to generate each of the figures:
+The following files can be used to generate each of the figures:
 1. Figure 1:
 2. Figure 2:
 3. Figure 3:
