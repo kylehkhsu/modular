@@ -1,12 +1,13 @@
 This repo contains code for the paper "Don’t Cut Corners: A theory of disentanglement in biologically inspired neurons for (almost) any dataset". 
 
 The following files can be used to generate each of the figures:
-1. Figure 1:
-2. Figure 2:
-3. Figure 3:
-4. Figure 4:
-5. Figure 5: Dual_Motor_RNNs.ipynb and Single_Motor_RNNs.ipynb
-6. Figure 6: 
+1. Figure 1c: Fig1_Basic.ipynb
+2. Figure 1d:
+3. Figure 2:
+4. Figure 3:
+5. Figure 4:
+6. Figure 5: Dual_Motor_RNNs.ipynb and Single_Motor_RNNs.ipynb
+7. Figure 6: 
 
 
 ### Installation
