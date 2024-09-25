@@ -11,6 +11,7 @@ The following files can be used to generate each of the figures:
 8. Figure 4: WILL
 9. Figure 5: Dual_Motor_RNNs.ipynb and Single_Motor_RNNs.ipynb
 10. Figure 6: WILL
+11. Figure 7: WILL
 
 
 ### Installation
