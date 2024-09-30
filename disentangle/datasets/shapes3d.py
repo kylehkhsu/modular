@@ -85,9 +85,9 @@ if __name__ == '__main__':
         {
             'data': {
                 'possible_dirs': [
-                    '/scr-ssd/kylehsu/data',
-                    '/scr/kylehsu/data',
-                    '/iris/u/kylehsu/data',
+                    '/scr-ssd/REDACTED/data',
+                    '/scr/REDACTED/data',
+                    'REDACTED/data',
                 ],
                 'seed':          42,
                 'num_val':       10000,

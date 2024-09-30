@@ -9,9 +9,9 @@ hydra:
   job:
     chdir: True
     env_set:
-      HOME: /iris/u/kylehsu
+      HOME: REDACTED
   run:
-    dir: /iris/u/kylehsu/runs/modular/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: REDACTED/runs/modular/${now:%Y-%m-%d}/${now:%H-%M-%S}
   sweep:
     dir: ${hydra.run.dir}
     subdir: ${hydra.job.num}
@@ -51,10 +51,7 @@ experiment:
   seed: 401
 
 data:
-#  name: independent
   name: corner:10
-#  name: diagonal_remove:3
-#  name: diagonal_strengthen:2400
   seed: 0
 
 eval:
@@ -66,10 +63,10 @@ eval:
   num_intervene_values: 10
 
 wandb:
-  entity: iris_viscam
+  entity: REDACTED
   project: modular
   name: null
-  group: arxiv_qlae
+  group: null
   job_type: null
 
 debug: False

@@ -29,7 +29,7 @@ import metrics
 
 
 def load_data(name):
-    dataset = np.load('/iris/u/kylehsu/code/modular/isaac3d_subset.npz')
+    dataset = np.load('/REDACTED/u/REDACTED/code/modular/isaac3d_subset.npz')
     s = dataset['s']
     x = dataset['x']
     if name == 'independent':
