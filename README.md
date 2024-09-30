@@ -5,7 +5,7 @@ The following files can be used to generate each of the figures:
 2. Figure 1d: 'Figure 1d.ipynb'
 3. Figure 2 Left: LUKE
 4. Figure 2 Right: KYLE
-5. Figure 3a-d: JIN
+5. Figure 3a-d: RNN_linear_modularity_torch.py & RNN_nonlinear_modularity.py.
 6. Figre 3e: see 'Actionable Neural Representations: Grid Cells from Minimal Constraints', 2023.
 7. Figure 3f-g: 'Figure 3fg.ipynb'
 8. Figure 4: WILL
