@@ -1,16 +1,16 @@
 # @package hydra.launcher
 #partition: iris-hi
 #account: iris
-#exclude: iris10
+#exclude: iris-hp-z8,iris-hgx-1
 partition: viscam
 account: viscam
 exclude:
 submitit_folder: ${hydra.sweep.dir}/.submitit/%j
-timeout_min: 1200
-cpus_per_task: 8
+timeout_min: 600
+cpus_per_task: 16
 gpus_per_node: 1
 tasks_per_node: 1
-mem_gb: 16
+mem_gb: 12
 nodes: 1
 name: ${hydra.job.name}
 _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher

@@ -12,17 +12,25 @@ def entropy(x):
     return -np.sum(p_x * np.log(p_x))
 
 
-def normalized_multiinformation(s):
+def multiinformation(s):
     """
     s: np.ndarray, shape=(n_samples, n_sources)
     """
     assert s.ndim == 2
     marginal_entropies = [entropy(s[:, i]) for i in range(s.shape[1])]
     joint_entropy = entropy(s)
-    nmi = (sum(marginal_entropies) - joint_entropy) / sum(marginal_entropies)
-    nmi = max(0, nmi)
-    nmi = min(1, nmi)
-    return nmi
+    mi = sum(marginal_entropies) - joint_entropy
+    mi = np.max([mi, 0])
+
+    max_mi = sum(marginal_entropies) - max(marginal_entropies)
+    normalized_mi = mi / max_mi
+
+    naive_normalized_mi = (sum(marginal_entropies) - joint_entropy) / sum(marginal_entropies)
+    return {
+        'mi': mi.item(),
+        'normalized_mi': normalized_mi.item(),
+        'naive_normalized_mi': naive_normalized_mi.item()
+    }
 
 def conditional_entropy(x, y):
     """H(X|Y) = H(X, Y) - H(Y)"""
@@ -289,7 +297,6 @@ def logistic_regression(X, y):
         class_weight='balanced',
         solver='lbfgs',
         max_iter=3000,
-        multi_class='multinomial',
         n_jobs=-1,
         verbose=0,
     )
