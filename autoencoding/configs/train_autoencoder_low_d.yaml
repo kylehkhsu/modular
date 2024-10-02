@@ -1,0 +1,65 @@
+defaults:
+  - override hydra/launcher: slurm
+  - _self_
+
+hydra:
+  callbacks:
+    log_job_return:
+      _target_: hydra.experimental.callbacks.LogJobReturnCallback
+  job:
+    chdir: True
+    env_set:
+      HOME: REDACTED
+  run:
+    dir: REDACTED/runs/modular/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: ${hydra.run.dir}
+    subdir: ${hydra.job.num}
+  sweeper:    # only invoked if --multirun is used
+    params:
+      data.name: independent, corner:0.3, corner:0.4, corner:0.5, corner:0.6, corner:0.7, corner:0.8, corner:0.9, corner:1.0, diagonal_strengthen:10, diagonal_strengthen:20, diagonal_strengthen:30, diagonal_strengthen:50, diagonal_strengthen:100, diagonal_strengthen:150, diagonal_strengthen:200, diagonal_strengthen:300, diagonal_remove:0.1, diagonal_remove:0.2, diagonal_remove:0.3, diagonal_remove:0.4, diagonal_remove:0.5, diagonal_remove:0.6, diagonal_remove:0.7, diagonal_remove:0.9
+      experiment.seed: 402, 403, 404, 405, 406, 407, 408, 409, 410
+
+optim:
+  n_steps: 200000
+  learning_rate: 0.001
+  weight_decay: 0
+  small_init_scale: 0.3
+  batch_size: 512
+
+model:
+  _partial_: True
+  _target_: scripts.train_autoencoder_low_d.MLPAutoencoder
+  d_input: 3
+  d_latent: 6
+  d_hidden: 16
+  n_mlp_layers: 2
+  lambdas:
+    reconstruction: 1
+    activation_energy: 1e-2
+    activation_negativity: 1
+    weight_energy: 1e-4
+experiment:
+  seed: 999
+
+data:
+  name: independent
+  path: REDACTED/code/modular/low_d_sources.npz
+  seed: 8254
+  d_source: 3
+  n_values_per_source: 21
+
+eval:
+  period: 5e4
+
+wandb:
+  entity: REDACTED
+  project: modular
+  name: null
+  group: null
+  job_type: null
+
+debug: False
+
+checkpoint:
+  period: ${eval.period}

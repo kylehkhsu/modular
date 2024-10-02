@@ -1,0 +1,15 @@
+ipdb
+matplotlib
+seaborn
+pandas
+tqdm
+jupyter
+equinox
+optax
+einops
+scikit-learn
+tensorflow
+tensorflow-datasets
+hydra-core
+hydra-submitit-launcher
+wandb
